@@ -74,6 +74,10 @@ local function findAndRemove(tableOfTables, fields)
     return nil
 end
 
+-- Get path of the directory of the bash file
+local bashScriptPath = debug.getinfo(1, "S").source:sub(2)
+local bashScriptDirectory = bashScriptPath:match("(.*/)") .. "../bash/"
+
 --- set a listener when debugging session finishes
 local function add_ssh_launch_attach_dap_listeners()
   local dap = load_dap()
@@ -94,11 +98,6 @@ local function add_ssh_launch_attach_dap_listeners()
           local port = deletedSessionInfo.port
           local debug_host = deletedSessionInfo.connect.host
           local debug_port = deletedSessionInfo.connect.port
-
-          -- ToDo: Make this global?
-          -- Get path of the directory of the bash file
-          local bashScriptPath = debug.getinfo(1, "S").source:sub(2)
-          local bashScriptDirectory = bashScriptPath:match("(.*/)") .. "../bash/"
 
           local cmd = string.format("bash %s %s %s %d %s %d", bashScriptDirectory .. "delete_n_tunnel.sh", username, host, port, debug_host, debug_port)
           local result = vim.fn.systemlist(cmd)
@@ -135,10 +134,6 @@ end
        })
      elseif config.request == 'ssh_launch_attach' then
 
-       -- Get path of the directory of the bash file
-       local bashScriptPath = debug.getinfo(1, "S").source:sub(2)
-       local bashScriptDirectory = bashScriptPath:match("(.*/)") .. "../bash/"
-
        -- Get the rest of the variables from config
        local username = config.username
        local host = config.host
@@ -149,7 +144,6 @@ end
        local program = config.program
        local python_exec = config.pythonPath
        local password = vim.fn.inputsecret("SSH Password: ")
-       -- ToDo: store the passwords? Maybe decrypt them with a master password when nvim opens for the first time
 
        local ssh_creation_command = string.format("bash %s %s %s %s %s %s %s %s %s", bashScriptDirectory .. "launch_n_tunnel.sh", username, host, port, debug_host, debug_port, password, python_exec, remoteRoot .. "/" .. program)
 
