@@ -78,6 +78,18 @@ end
 local bashScriptPath = debug.getinfo(1, "S").source:sub(2)
 local bashScriptDirectory = bashScriptPath:match("(.*/)") .. "../bash/"
 
+local function checkForError(myTable)
+  local error = false
+  for _, str in ipairs(myTable) do
+    if string.find(str, "Error") then
+      -- Produce a Neovim error with the string containing "Error"
+      print(str)
+      error = true
+    end
+  end
+  return error
+end
+
 --- set a listener when debugging session finishes
 local function add_ssh_launch_attach_dap_listeners()
   local dap = load_dap()
@@ -101,7 +113,7 @@ local function add_ssh_launch_attach_dap_listeners()
 
           local cmd = string.format("bash %s %s %s %d %s %d", bashScriptDirectory .. "delete_n_tunnel.sh", username, host, port, debug_host, debug_port)
           local result = vim.fn.systemlist(cmd)
-          -- ToDo: Check that the tunnel has been deleted correctly
+          checkForError(result)
 
       end
     end
@@ -148,39 +160,36 @@ end
        local ssh_creation_command = string.format("bash %s %s %s %s %s %s %s %s %s", bashScriptDirectory .. "launch_n_tunnel.sh", username, host, port, debug_host, debug_port, password, python_exec, remoteRoot .. "/" .. program)
 
        local result = vim.fn.systemlist(ssh_creation_command)
+       local error_flag = checkForError(result)
+       if not error_flag then
 
-        -- ToDo: Handle the result. In stop creating the debugging session if the command was not executed properly or the tunnels are not created
-        -- if string.find(result, "Success") then
-        --     print("Execution successful")
-
-        -- else
-        --     print("Error:", result)
-        -- end
-
-       local debugSession = {}
-       debugSession.username = config.username
-       debugSession.host = config.host
-       debugSession.port = config.port
-       debugSession.connect = config.connect
-       table.insert(active_sessions, debugSession)
+         local debugSession = {}
+         debugSession.username = config.username
+         debugSession.host = config.host
+         debugSession.port = config.port
+         debugSession.connect = config.connect
+         table.insert(active_sessions, debugSession)
 
 
-        -- There is no function for "ssh_launch_attach" in dap, that configuration request does not exists. Hence, we need
-        -- to modify the request to "attach".
-       config.request = "attach"
-       config.host = nil
-       config.port = nil
-       config.sshpass = nil
+          -- There is no function for "ssh_launch_attach" in dap, that configuration request does not exists. Hence, we need
+          -- to modify the request to "attach".
+         config.request = "attach"
+         config.host = nil
+         config.port = nil
+         config.sshpass = nil
 
-       cb({
-         type = 'server',
-         port = assert(debug_port, '`connect.port` is required for a python `ssh_launch_attach` configuration'),
-         host = debug_host,
-         enrich_config = enrich_config,
-         options = {
-           source_filetype = 'python',
-         }
-       })
+         cb({
+           type = 'server',
+           port = assert(debug_port, '`connect.port` is required for a python `ssh_launch_attach` configuration'),
+           host = debug_host,
+           enrich_config = enrich_config,
+           options = {
+             source_filetype = 'python',
+           }
+         })
+
+       end
+
 
      else
        cb({

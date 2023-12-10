@@ -25,7 +25,6 @@ check_and_send_result() {
 }
 
 # Execute Python file via sshpass
-echo "sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no -f -l "$USERNAME" -p "$PORT" "$HOST" "$PYTHON_EXEC -Xfrozen_modules=off -m debugpy --listen localhost:5678 --wait-for-client" "$PYTHON_SCRIPT_PATH""
 sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no -f -l "$USERNAME" -p "$PORT" "$HOST" "$PYTHON_EXEC -Xfrozen_modules=off -m debugpy --listen localhost:5678 --wait-for-client" "$PYTHON_SCRIPT_PATH"
 check_and_send_result "Failed to execute Python script via sshpass"
 
@@ -37,10 +36,8 @@ SECONDS_WAITED=0
 while [ $SECONDS_WAITED -lt $MAX_WAIT_SECONDS ]; do
     # Check if the debugger port is open on the remote host
     if sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no -p "$PORT" "$USERNAME@$HOST" "netstat -an | grep -q '$DEBUG_PORT.*LISTEN'"; then
-        echo "Debugger is ready."
         break
     else
-        echo "Debugger is not ready yet."
         sleep $WAIT_INTERVAL
         SECONDS_WAITED=$((SECONDS_WAITED + WAIT_INTERVAL))
     fi
@@ -53,7 +50,6 @@ if [ $SECONDS_WAITED -ge $MAX_WAIT_SECONDS ]; then
 fi
  
 # Create Local Port Forwarding Tunnel via sshpass
-echo "sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no -fN -L "$DEBUG_PORT:$DEBUG_HOST:$DEBUG_PORT" -l "$USERNAME" -p "$PORT" "$HOST""
 sshpass -p "$PASSWORD" ssh -o StrictHostKeyChecking=no -fN -L "$DEBUG_PORT:$DEBUG_HOST:$DEBUG_PORT" -l "$USERNAME" -p "$PORT" "$HOST"
 check_and_send_result "Failed to create Local Port Forwarding Tunnel via sshpass"
 
