@@ -11,7 +11,8 @@ The tunnel is deleted when a debug sessions is finished or stopped.
 
 ## Installation
 
-- Requires [nvim-dap-python][1]
+- Requires [nvim-dap-python][1] and its dependencies.
+- Requires `sshpass` if SSH used with password.
 
 If you are using Lazy:
 ```lua
@@ -28,5 +29,15 @@ If you are using Lazy:
 
 ```
 
+## Usage
+This is an example of launch.json using password.
+```json
+
+```
+
+This is an example of launch.json using a SSH key.
+```json
+
+```
 
 [1]: https://github.com/mfussenegger/nvim-dap-python

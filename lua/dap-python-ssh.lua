@@ -56,12 +56,12 @@ local active_sessions = {}
  }
 
 -- Function to find and remove a table based on multiple fields
-local function findAndRemove(tableOfTables, fields)
+local function findAndRemove(tableOfTables, config_fields)
     for i, tbl in ipairs(tableOfTables) do
         local match = true
 
         -- A debugger session with attach can be identified by host and port
-        if tbl.connect.host ~= fields.connect.host or tbl.connect.port ~= fields.connect.port then
+        if tbl.connect.host ~= config_fields.connect.host or tbl.connect.port ~= config_fields.connect.port then
           match = false
         end
 
@@ -105,13 +105,17 @@ local function add_ssh_launch_attach_dap_listeners()
       if deletedSessionInfo then
 
           -- Call Bash script only if the table was found
-          local username = deletedSessionInfo.username
-          local host = deletedSessionInfo.host
-          local port = deletedSessionInfo.port
-          local debug_host = deletedSessionInfo.connect.host
-          local debug_port = deletedSessionInfo.connect.port
+          local cmd = string.format("bash %s %s %s %d %s %d %s %s",
+            bashScriptDirectory .. "delete_n_tunnel.sh",
+            deletedSessionInfo.username,
+            deletedSessionInfo.host,
+            deletedSessionInfo.port,
+            deletedSessionInfo.connect.host,
+            deletedSessionInfo.connect.port,
+            deletedSessionInfo.use_pass,
+            deletedSessionInfo.ssh_key_pass
+        )
 
-          local cmd = string.format("bash %s %s %s %d %s %d", bashScriptDirectory .. "delete_n_tunnel.sh", username, host, port, debug_host, debug_port)
           local result = vim.fn.systemlist(cmd)
           checkForError(result)
 
@@ -147,17 +151,30 @@ end
      elseif config.request == 'ssh_launch_attach' then
 
        -- Get the rest of the variables from config
-       local username = config.username
-       local host = config.host
-       local port = config.port
        local debug_host = config.connect.host or '127.0.0.1'
        local debug_port = config.connect.port or 5678
-       local remoteRoot = config.pathMappings[1].remoteRoot
-       local program = config.program
-       local python_exec = config.pythonPath
-       local password = vim.fn.inputsecret("SSH Password: ")
+       local ssh_key_pass
+       local use_pass
 
-       local ssh_creation_command = string.format("bash %s %s %s %s %s %s %s %s %s", bashScriptDirectory .. "launch_n_tunnel.sh", username, host, port, debug_host, debug_port, password, python_exec, remoteRoot .. "/" .. program)
+       if config.ssh_key then
+        ssh_key_pass = config.ssh_key
+        use_pass = "false"
+       else
+        ssh_key_pass = vim.fn.inputsecret("SSH Password: ")
+        use_pass = "true"
+       end
+
+       local ssh_creation_command = string.format("bash %s %s %s %d %s %d %s %s %s %s",
+        bashScriptDirectory .. "launch_n_tunnel.sh",
+        config.username,
+        config.host,
+        config.port,
+        debug_host,
+        debug_port,
+        ssh_key_pass,
+        use_pass,
+        config.pythonPath,
+        config.pathMappings[1].remoteRoot .. "/" .. config.program)
 
        local result = vim.fn.systemlist(ssh_creation_command)
        local error_flag = checkForError(result)
@@ -168,6 +185,10 @@ end
          debugSession.host = config.host
          debugSession.port = config.port
          debugSession.connect = config.connect
+         debugSession.use_pass = use_pass
+         if use_pass == "false" then
+          debugSession.ssh_key_pass = ssh_key_pass
+         end
          table.insert(active_sessions, debugSession)
 
 
@@ -176,7 +197,6 @@ end
          config.request = "attach"
          config.host = nil
          config.port = nil
-         config.sshpass = nil
 
          cb({
            type = 'server',
