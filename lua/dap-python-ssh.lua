@@ -51,7 +51,6 @@ local active_sessions = {}
 
  local default_setup_opts = {
    include_configs = true,
-   console = 'integratedTerminal',
    pythonPath = nil,
  }
 
@@ -114,7 +113,7 @@ local function add_ssh_launch_attach_dap_listeners()
             deletedSessionInfo.connect.port,
             deletedSessionInfo.use_pass,
             deletedSessionInfo.ssh_key_pass
-        )
+          )
 
           local result = vim.fn.systemlist(cmd)
           checkForError(result)
