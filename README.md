@@ -18,7 +18,7 @@ When launching an application remotely, the plugin:
 If you are using Lazy:
 ```lua
   {
-    "nvim-dap-python-ssh",
+    "aams-eam/nvim-dap-python-ssh",
     dependencies = {
       'mfussenegger/nvim-dap-python',
     },
